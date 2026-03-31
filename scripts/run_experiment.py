@@ -132,6 +132,7 @@ def build_markdown(results: list[ExperimentResult], max_steps: int, dataset_name
             f"- TritMorph eval log: `{tritmorph.eval_log_path}`",
             f"- Vanilla train log: `{vanilla.train_log_path}`",
             f"- Vanilla eval log: `{vanilla.eval_log_path}`",
+            f"- Detailed morphology probe CSV: `{ROOT / 'results' / 'morphology_probe_detailed.csv'}`",
         ]
     )
     return "\n".join(lines) + "\n"

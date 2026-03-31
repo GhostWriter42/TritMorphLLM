@@ -19,9 +19,15 @@ Final scaled WikiText-103 results at 10k steps:
 
 Interpretation:
 
-- TritMorph preserves strong morphology-aware generalization on unseen composed forms.
+- TritMorph preserves strong morphology-aware generalization on 100+ systematically generated unseen compounds.
 - Vanilla BPE remains competitive on perplexity but does not generalize on morphology probes.
 - The composition-first ternary path is now validated as a useful research direction for structure-aware LLMs.
+
+Example morphology probe row:
+
+| word | predicted_tokens | fused_correctly |
+| --- | --- | --- |
+| `antiultrahappyproof` | `anti ultra happy proof` | `True` |
 
 ## Why this differs from a standard subword LLM
 
@@ -148,6 +154,18 @@ Default scaled Phase 5 settings in `configs/default.yaml`:
 - `src/model/vanilla_bpe_baseline.py`: fair baseline without morphology-aware composition.
 - `src/model/ternary_layers.py`: BitNet-style ternary linear layers with STE and absmax scaling.
 - `scripts/run_experiment.py`: orchestrates train/eval/report generation for both models.
+
+## Morphology probe
+
+The morphology benchmark now evaluates 100+ systematically generated unseen compounds rather than 5 hand-crafted examples.
+
+- 20 common prefixes
+- 20 common suffixes
+- 30 base stems
+- Random combinations of 1-3 prefixes and 1-2 suffixes
+- Words filtered to remain unseen with respect to the training vocabulary
+
+Detailed probe results are saved to `results/morphology_probe_detailed.csv`.
 
 ## Citation
 
