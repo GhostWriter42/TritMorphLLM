@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+title: "TritMorphLLM: Hybrid Morphological Tokenization with Explicit Composition Layers and Ternary Weights"
+message: "If you use this software, please cite it using this metadata."
+type: software
+authors:
+  - family-names: "Contributors"
+    given-names: "TritMorphLLM"
+year: 2026
+license: MIT
+repository-code: "https://github.com/your-org/tritmorph-llm"
+abstract: >-
+  Research codebase for morphology-aware language modeling with hybrid
+  morphological tokenization, explicit composition layers, and optional
+  ternary BitNet-style weights.

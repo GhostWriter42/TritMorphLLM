@@ -1,0 +1,52 @@
+seed: 42
+device: cuda
+dataset:
+  preset: wikitext103
+  name: wikitext
+  config: wikitext-103-raw-v1
+  text_column: text
+  split_train: train
+  split_val: validation
+  fallback_name: TinyStories
+  fallback_config: null
+tokenizer:
+  vocab_size: 8192
+  lowercase: true
+  min_frequency: 2
+  max_word_length: 64
+  max_token_length: 256
+model:
+  vocab_size: 8192
+  word_vocab_size: 8192
+  max_position_embeddings: 256
+  d_model: 1024
+  n_heads: 16
+  n_layers: 12
+  mlp_ratio: 4
+  dropout: 0.1
+  composition_hidden_dim: 2048
+  composition_attention: true
+  pad_token_id: 0
+  use_ternary: true
+training:
+  output_dir: checkpoints/phase5
+  epochs: 1
+  learning_rate: 2.0e-4
+  weight_decay: 0.1
+  betas: [0.9, 0.95]
+  batch_size: 16
+  eval_batch_size: 16
+  grad_accum_steps: 1
+  warmup_steps: 100
+  max_steps: 10000
+  eval_interval: 500
+  log_interval: 50
+  save_interval: 1000
+  num_workers: 0
+  max_train_samples: 20000
+  max_eval_samples: 2048
+  use_wandb: false
+  project: tritmorph-llm
+  run_name: phase5-scale
+  model_type: tritmorph
+  compile: false

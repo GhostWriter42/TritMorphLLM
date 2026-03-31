@@ -1,0 +1,7 @@
+Generating test split:   0%|          | 0/4358 [00:00<?, ? examples/s]Generating test split: 100%|██████████| 4358/4358 [00:00<00:00, 959062.74 examples/s]
+Generating train split:   0%|          | 0/36718 [00:00<?, ? examples/s]Generating train split: 100%|██████████| 36718/36718 [00:00<00:00, 2144667.86 examples/s]
+Generating validation split:   0%|          | 0/3760 [00:00<?, ? examples/s]Generating validation split: 100%|██████████| 3760/3760 [00:00<00:00, 1648091.03 examples/s]
+
+
+
+training:tritmorph:   0%|          | 0/5 [00:00<?, ?it/s]training:tritmorph:  20%|██        | 1/5 [00:03<00:12,  3.02s/it]training:tritmorph:  40%|████      | 2/5 [00:05<00:07,  2.50s/it]training:tritmorph:  60%|██████    | 3/5 [00:07<00:04,  2.32s/it]training:tritmorph:  80%|████████  | 4/5 [00:09<00:02,  2.27s/it]training:tritmorph: 100%|██████████| 5/5 [00:11<00:00,  2.21s/it]training:tritmorph: 100%|██████████| 5/5 [00:11<00:00,  2.35s/it]

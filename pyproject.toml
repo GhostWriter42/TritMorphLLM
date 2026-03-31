@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tritmorph-llm"
+version = "0.1.0"
+description = "Morphology-aware tokenizer and composition-first language model starter project."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "TritMorphLLM Contributors" }
+]
+dependencies = [
+  "torch>=2.4.0",
+  "transformers>=4.45.0",
+  "tokenizers>=0.20.0",
+  "datasets>=3.0.0",
+  "sentencepiece>=0.2.0",
+  "numpy>=1.26.0",
+  "tqdm>=4.66.0",
+  "PyYAML>=6.0.1",
+  "wandb>=0.18.0"
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
