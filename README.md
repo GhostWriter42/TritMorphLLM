@@ -158,7 +158,7 @@ If you use this repository in research, please cite it using the metadata in `CI
   title = {TritMorphLLM: Hybrid Morphological Tokenization with Explicit Composition Layers and Ternary Weights},
   author = {TritMorphLLM Contributors},
   year = {2026},
-  url = {https://github.com/your-org/tritmorph-llm}
+  url = {https://github.com/GhostWriter42/TritMorphLLM}
 }
 ```
 
