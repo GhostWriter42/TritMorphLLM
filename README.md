@@ -1,6 +1,6 @@
 # TritMorphLLM
 
-TritMorphLLM is a morphology-aware language modeling project built to test whether explicit word composition improves generalization beyond standard subword pipelines. The repository includes a hybrid tokenizer, a composition-first transformer path, optional ternary linear layers, and evaluation scripts spanning perplexity, morphology, downstream tasks, standard benchmarks, and decoding speed.
+TritMorphLLM is a morphology-aware language modeling project built to test whether explicit word composition improves generalization beyond standard subword pipelines. The repository includes a hybrid tokenizer, a composition-first transformer path, optional ternary linear layers, and evaluation scripts spanning perplexity, morphology, standard benchmarks, and decoding speed.
 
 ## Final Results
 
@@ -9,16 +9,6 @@ Primary final metrics for the 50k-step TritMorph checkpoint on the mixed 70/20/1
 - Held-out perplexity: `160.41`
 - Morphology generalization (128-word systematic probe): `1.000`
 - Checkpoint: `checkpoints/tritmorph_ternary/tritmorph_step_50000.pt`
-
-### Downstream evaluations
-
-| Task | Metric | Score | Notes |
-| --- | --- | ---: | --- |
-| IMDb | accuracy | 0.842 | Sentiment classification via prompt scoring |
-| QA | F1 | 0.713 | Short reading-comprehension prompts |
-| Code completion | pass@1 | 0.381 | Function-name prediction on held-out snippets |
-| Agentic tool-use | success | 0.667 | Simulated multi-turn tool selection |
-| Instruction following | accuracy | 0.792 | Short constrained generation tasks |
 
 ### Standard benchmarks
 
@@ -51,7 +41,7 @@ Measured with the real speed harness in `scripts/eval_speed.py` using the saved 
 - Introduces an explicit composition layer that fuses subword pieces into word-level representations before contextual modeling.
 - Trains on a deliberate `70/20/10` mixture of `FineWeb-Edu`, code data, and agentic/instruction-following data.
 - Keeps a fair comparison path between TritMorph and a vanilla BPE baseline while supporting optional ternary layers.
-- Ships reproducible evaluation scripts for held-out perplexity, systematic morphology probes, downstream tasks, `lm-evaluation-harness` benchmarks, and decoding speed tests.
+- Ships reproducible evaluation scripts for held-out perplexity, systematic morphology probes, `lm-evaluation-harness` benchmarks, and decoding speed tests.
 
 ## Model Overview
 
@@ -148,17 +138,6 @@ python3 -m scripts.eval_morphology \
   --step 50000
 ```
 
-### Evaluate downstream tasks
-
-```bash
-python3 -m scripts.eval_downstream \
-  --config configs/default.yaml \
-  --dataset fineweb_edu_code_agentic_mix \
-  --checkpoint checkpoints/tritmorph_ternary/tritmorph_step_50000.pt \
-  --model-type tritmorph \
-  --step 50000
-```
-
 ### Run standard benchmarks
 
 ```bash
@@ -179,7 +158,6 @@ python3 -m scripts.eval_speed \
 ## Key Outputs
 
 - `results/morphology_probe_detailed.csv`: per-word systematic probe outputs.
-- `results/downstream_results.md`: downstream task summary.
 - `results/standard_benchmarks.md`: `lm-evaluation-harness` benchmark table.
 - `results/speed_test.md`: decoding speed comparison across device and ternary mode.
 
