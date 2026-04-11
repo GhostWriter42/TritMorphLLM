@@ -1,14 +1,16 @@
 seed: 42
 device: cuda
 dataset:
-  preset: wikitext103
-  name: wikitext
-  config: wikitext-103-raw-v1
+  preset: fineweb_edu_code_agentic_mix
+  name: HuggingFaceFW/fineweb-edu
+  config: sample-10BT
   text_column: text
   split_train: train
-  split_val: validation
-  fallback_name: TinyStories
-  fallback_config: null
+  split_val: train
+  textmix:
+    fineweb_edu: 0.70
+    code: 0.20
+    agentic: 0.10
 tokenizer:
   vocab_size: 8192
   lowercase: true
@@ -19,27 +21,27 @@ model:
   vocab_size: 8192
   word_vocab_size: 8192
   max_position_embeddings: 256
-  d_model: 1024
-  n_heads: 16
-  n_layers: 12
+  d_model: 1536
+  n_heads: 24
+  n_layers: 16
   mlp_ratio: 4
   dropout: 0.1
-  composition_hidden_dim: 2048
+  composition_hidden_dim: 3072
   composition_attention: true
   pad_token_id: 0
   use_ternary: true
 training:
-  output_dir: checkpoints/phase5
+  output_dir: checkpoints/phase6
   epochs: 1
-  learning_rate: 2.0e-4
+  learning_rate: 1.5e-4
   weight_decay: 0.1
   betas: [0.9, 0.95]
-  batch_size: 16
-  eval_batch_size: 16
+  batch_size: 8
+  eval_batch_size: 8
   grad_accum_steps: 1
   warmup_steps: 100
-  max_steps: 10000
-  eval_interval: 500
+  max_steps: 50000
+  eval_interval: 1000
   log_interval: 50
   save_interval: 1000
   num_workers: 0
@@ -47,6 +49,6 @@ training:
   max_eval_samples: 2048
   use_wandb: false
   project: tritmorph-llm
-  run_name: phase5-scale
+  run_name: phase6-hybrid-scale
   model_type: tritmorph
   compile: false

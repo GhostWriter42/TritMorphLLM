@@ -52,7 +52,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--config", type=Path, default=ROOT / "configs" / "default.yaml")
     parser.add_argument("--max-steps", type=int, default=None)
     parser.add_argument("--device", type=str, default=None)
-    parser.add_argument("--dataset", type=str, default=None, choices=["wikitext103", "tiny_stories"])
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        default=None,
+        choices=["wikitext103", "tiny_stories", "fineweb_edu_code_agentic_mix"],
+    )
     parser.add_argument("--model-type", type=str, default=None, choices=["tritmorph", "vanilla_bpe"])
     parser.add_argument("--save-dir", type=Path, default=None)
     parser.add_argument("--output-dir", type=Path, default=None)
@@ -93,7 +98,10 @@ def resolve_device(device_name: str | None) -> torch.device:
 def iter_texts(dataset: Dataset, text_column: str, limit: int | None = None) -> Iterator[str]:
     count = 0
     for row in dataset:
-        text = row.get(text_column, "")
+        if isinstance(row, str):
+            text = row
+        else:
+            text = row.get(text_column, "")
         if isinstance(text, str) and text.strip():
             yield text
             count += 1

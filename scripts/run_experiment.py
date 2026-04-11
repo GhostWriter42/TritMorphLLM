@@ -39,14 +39,24 @@ class ExperimentResult:
     gpu_memory_mb: float
     train_log_path: Path
     eval_log_path: Path
+    downstream_log_path: Path
+    standard_bench_log_path: Path
+    speed_log_path: Path
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run TritMorphLLM vs Vanilla BPE experiment")
     parser.add_argument("--config", type=Path, default=ROOT / "configs" / "default.yaml")
     parser.add_argument("--max-steps", type=int, default=None)
-    parser.add_argument("--dataset", type=str, default=None, choices=["wikitext103", "tiny_stories"])
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        default=None,
+        choices=["wikitext103", "tiny_stories", "fineweb_edu_code_agentic_mix"],
+    )
     parser.add_argument("--resume-tritmorph-from", type=Path, default=None)
+    parser.add_argument("--run-standard-benchmarks", action="store_true")
+    parser.add_argument("--run-speed-test", action="store_true")
     return parser.parse_args()
 
 
@@ -130,9 +140,18 @@ def build_markdown(results: list[ExperimentResult], max_steps: int, dataset_name
             "",
             f"- TritMorph train log: `{tritmorph.train_log_path}`",
             f"- TritMorph eval log: `{tritmorph.eval_log_path}`",
+            f"- TritMorph downstream log: `{tritmorph.downstream_log_path}`",
+            f"- TritMorph standard benchmarks log: `{tritmorph.standard_bench_log_path}`",
+            f"- TritMorph speed log: `{tritmorph.speed_log_path}`",
             f"- Vanilla train log: `{vanilla.train_log_path}`",
             f"- Vanilla eval log: `{vanilla.eval_log_path}`",
+            f"- Vanilla downstream log: `{vanilla.downstream_log_path}`",
+            f"- Vanilla standard benchmarks log: `{vanilla.standard_bench_log_path}`",
+            f"- Vanilla speed log: `{vanilla.speed_log_path}`",
             f"- Detailed morphology probe CSV: `{ROOT / 'results' / 'morphology_probe_detailed.csv'}`",
+            f"- Downstream results markdown: `{ROOT / 'results' / 'downstream_results.md'}`",
+            f"- Standard benchmarks markdown: `{ROOT / 'results' / 'standard_benchmarks.md'}`",
+            f"- Speed test markdown: `{ROOT / 'results' / 'speed_test.md'}`",
         ]
     )
     return "\n".join(lines) + "\n"
@@ -170,9 +189,14 @@ def run_single_experiment(
     use_ternary: bool,
     dataset_name: str | None,
     resume_from: Path | None = None,
+    run_standard_benchmarks: bool = False,
+    run_speed_test: bool = False,
 ) -> ExperimentResult:
     train_log = RESULTS_DIR / f"{model_type}_train.log"
     eval_log = RESULTS_DIR / f"{model_type}_eval.log"
+    downstream_log = RESULTS_DIR / f"{model_type}_downstream.log"
+    standard_bench_log = RESULTS_DIR / f"{model_type}_standard_benchmarks.log"
+    speed_log = RESULTS_DIR / f"{model_type}_speed.log"
 
     train_command = [
         sys.executable,
@@ -194,13 +218,14 @@ def run_single_experiment(
     if resume_from is not None:
         train_command.extend(["--resume-from", str(resume_from)])
 
-    checkpoint_path = resolve_latest_checkpoint(
-        output_dir,
-        model_type,
-        max_steps,
-        preferred_path=resume_from,
-    ) if (resume_from is not None or output_dir.exists()) else output_dir / f"{model_type}_step_{max_steps}.pt"
+    checkpoint_path = output_dir / f"{model_type}_step_{max_steps}.pt"
     if resume_from is not None:
+        checkpoint_path = resolve_latest_checkpoint(
+            output_dir,
+            model_type,
+            max_steps,
+            preferred_path=resume_from,
+        )
         training_time = 0.0
     elif checkpoint_path.exists():
         training_time = infer_training_time_from_log(train_log)
@@ -226,6 +251,51 @@ def run_single_experiment(
         eval_command.extend(["--dataset", dataset_name])
     _, eval_stdout = run_command(eval_command, eval_log)
 
+    downstream_command = [
+        sys.executable,
+        "-m",
+        "scripts.eval_downstream",
+        "--config",
+        str(config),
+        "--checkpoint",
+        str(checkpoint_path),
+        "--model-type",
+        model_type,
+        "--step",
+        str(max_steps),
+    ]
+    if dataset_name is not None:
+        downstream_command.extend(["--dataset", dataset_name])
+    run_command(downstream_command, downstream_log)
+
+    if run_standard_benchmarks:
+        standard_command = [
+            sys.executable,
+            "-m",
+            "scripts.eval_standard_benchmarks",
+            "--checkpoint",
+            str(checkpoint_path),
+            "--model-type",
+            model_type,
+        ]
+        run_command(standard_command, standard_bench_log)
+    else:
+        standard_bench_log.write_text("Standard benchmark run skipped.\n", encoding="utf-8")
+
+    if run_speed_test:
+        speed_command = [
+            sys.executable,
+            "-m",
+            "scripts.eval_speed",
+            "--checkpoint",
+            str(checkpoint_path),
+            "--model-type",
+            model_type,
+        ]
+        run_command(speed_command, speed_log)
+    else:
+        speed_log.write_text("Speed test run skipped.\n", encoding="utf-8")
+
     perplexity = extract_metric(r"Held-out perplexity: ([0-9.]+)", eval_stdout)
     morph_acc = extract_metric(r"Morphology generalization score: ([0-9.]+)", eval_stdout)
 
@@ -239,6 +309,9 @@ def run_single_experiment(
         gpu_memory_mb=gpu_memory_mb,
         train_log_path=train_log,
         eval_log_path=eval_log,
+        downstream_log_path=downstream_log,
+        standard_bench_log_path=standard_bench_log,
+        speed_log_path=speed_log,
     )
 
 
@@ -258,6 +331,8 @@ def main() -> None:
         use_ternary=True,
         dataset_name=dataset_name,
         resume_from=args.resume_tritmorph_from,
+        run_standard_benchmarks=args.run_standard_benchmarks,
+        run_speed_test=args.run_speed_test,
     )
     vanilla_result = run_single_experiment(
         config=args.config,
@@ -266,6 +341,8 @@ def main() -> None:
         max_steps=max_steps,
         use_ternary=False,
         dataset_name=dataset_name,
+        run_standard_benchmarks=args.run_standard_benchmarks,
+        run_speed_test=args.run_speed_test,
     )
 
     markdown = build_markdown([tritmorph_result, vanilla_result], max_steps=max_steps, dataset_name=dataset_name)

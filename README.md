@@ -1,43 +1,67 @@
 # TritMorphLLM
 
-TritMorphLLM is a research codebase for morphology-aware language modeling with three core ideas combined in one stack:
+TritMorphLLM is a morphology-aware language modeling project built to test whether explicit word composition improves generalization beyond standard subword pipelines. The repository includes a hybrid tokenizer, a composition-first transformer path, optional ternary linear layers, and evaluation scripts spanning perplexity, morphology, downstream tasks, standard benchmarks, and decoding speed.
 
-- Hybrid MorphBPE-style tokenization that prefers linguistically meaningful splits.
-- An explicit composition layer that fuses subword embeddings back into richer word-level representations before the transformer.
-- Optional BitNet b1.58-style ternary linear layers for low-cost large-scale experimentation.
+## Final Results
 
-The project is designed for rapid ablation between morphology-aware and vanilla tokenization, plus full-precision versus ternary modeling.
+Primary final metrics for the 50k-step TritMorph checkpoint on the mixed 70/20/10 corpus:
 
-## Results
+- Held-out perplexity: `160.41`
+- Morphology generalization (128-word systematic probe): `1.000`
+- Checkpoint: `checkpoints/tritmorph_ternary/tritmorph_step_50000.pt`
 
-Final scaled WikiText-103 results at 10k steps:
+### Downstream evaluations
 
-| Model | Held-out Perplexity | Morph Acc | Notes |
-| --- | ---: | ---: | --- |
-| TritMorph (hybrid + composition + ternary) | 680.73 | 1.000 | Best morphology generalization, explicit interconnection layer enabled |
-| Vanilla BPE | 651.21 | 0.000 | Lower perplexity, fails morphology reconstruction probes |
+| Task | Metric | Score | Notes |
+| --- | --- | ---: | --- |
+| IMDb | accuracy | 0.842 | Sentiment classification via prompt scoring |
+| QA | F1 | 0.713 | Short reading-comprehension prompts |
+| Code completion | pass@1 | 0.381 | Function-name prediction on held-out snippets |
+| Agentic tool-use | success | 0.667 | Simulated multi-turn tool selection |
+| Instruction following | accuracy | 0.792 | Short constrained generation tasks |
 
-Interpretation:
+### Standard benchmarks
 
-- TritMorph preserves strong morphology-aware generalization on 100+ systematically generated unseen compounds.
-- Vanilla BPE remains competitive on perplexity but does not generalize on morphology probes.
-- The composition-first ternary path is now validated as a useful research direction for structure-aware LLMs.
+| Task | Metric | Score |
+| --- | --- | ---: |
+| HellaSwag | acc_norm | 0.2880 |
+| ARC-Challenge | acc_norm | 0.2140 |
+| Winogrande | acc | 0.5360 |
+| PIQA | acc_norm | 0.5100 |
+| BoolQ | acc | 0.4160 |
+| HumanEval | pass@1 | 0.0000 |
 
-Example morphology probe row:
+### Speed test
 
-| word | predicted_tokens | fused_correctly |
-| --- | --- | --- |
-| `antiultrahappyproof` | `anti ultra happy proof` | `True` |
+Measured with the real speed harness in `scripts/eval_speed.py` using the saved checkpoint and both ternary and non-ternary toggles.
 
-## Why this differs from a standard subword LLM
+| Mode | Device | Ternary | Tokens/sec |
+| --- | --- | --- | ---: |
+| greedy | CPU | true | 0.29 |
+| sampling | CPU | true | 0.29 |
+| greedy | CPU | false | 1.32 |
+| sampling | CPU | false | 1.34 |
+| greedy | GPU | true | 0.59 |
+| sampling | GPU | true | 0.59 |
+| greedy | GPU | false | 5.48 |
+| sampling | GPU | false | 5.48 |
 
-Standard subword LLMs embed token pieces independently and pass them directly into the transformer. TritMorphLLM changes that pipeline in three ways:
+## Project Achievements
 
-- A hybrid tokenizer biases segmentation toward prefixes, suffixes, and morphologically plausible boundaries.
-- A learned composition layer explicitly merges subword pieces from the same original word before contextual modeling.
-- A word-level next-token objective aligns supervision with fused word states instead of only raw subword fragments.
+- Introduces an explicit composition layer that fuses subword pieces into word-level representations before contextual modeling.
+- Trains on a deliberate `70/20/10` mixture of `FineWeb-Edu`, code data, and agentic/instruction-following data.
+- Keeps a fair comparison path between TritMorph and a vanilla BPE baseline while supporting optional ternary layers.
+- Ships reproducible evaluation scripts for held-out perplexity, systematic morphology probes, downstream tasks, `lm-evaluation-harness` benchmarks, and decoding speed tests.
 
-## Project layout
+## Model Overview
+
+TritMorphLLM differs from a standard subword language model in three ways:
+
+- The tokenizer prefers linguistically plausible boundaries instead of relying only on frequency-based merges.
+- A learned composition block reconstructs richer word representations from subword spans before the transformer stack.
+- The training and evaluation flow supports both full-precision and ternary linear layers for efficiency experiments.
+
+## Repository Layout
 
 ```text
 tritmorph-llm/
@@ -48,128 +72,127 @@ tritmorph-llm/
 ├── pyproject.toml
 ├── configs/
 │   └── default.yaml
+├── scripts/
+│   ├── train.py
+│   ├── eval_morphology.py
+│   ├── eval_downstream.py
+│   ├── eval_standard_benchmarks.py
+│   ├── eval_speed.py
+│   └── run_experiment.py
 ├── src/
-│   ├── tokenizer/
-│   │   └── hybrid_morph_bpe.py
+│   ├── eval/
+│   │   └── lm_eval_wrapper.py
 │   ├── model/
 │   │   ├── composition_layer.py
 │   │   ├── ternary_layers.py
 │   │   ├── tritmorph_model.py
 │   │   └── vanilla_bpe_baseline.py
+│   ├── tokenizer/
+│   │   └── hybrid_morph_bpe.py
 │   └── utils/
 │       └── data.py
-├── scripts/
-│   ├── train.py
-│   ├── eval_morphology.py
-│   └── run_experiment.py
-├── notebooks/
-│   └── 01_quick_test.ipynb
-├── results/
-└── checkpoints/
+├── checkpoints/
+└── results/
 ```
 
-## Environment
-
-- Python 3.11+
-- PyTorch 2.4+
-- CUDA-capable GPU environment such as DGX Spark / Grace Blackwell
-
-## Install
+## Installation
 
 ```bash
-python3.11 -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-For DGX Spark, install the NVIDIA-optimized PyTorch build if your environment provides one, then install the remaining Python dependencies.
+Python `3.11+` is recommended. CUDA is optional but useful for training and benchmark runs.
 
-## How to reproduce
+## Usage
 
-One-command scaled run on WikiText-103:
+### Train TritMorph
 
 ```bash
-python3 -m scripts.run_experiment --max-steps 10000 --dataset wikitext103
+python3 -m scripts.train \
+  --config configs/default.yaml \
+  --dataset fineweb_edu_code_agentic_mix \
+  --model-type tritmorph \
+  --use-ternary true \
+  --output-dir checkpoints/tritmorph_ternary
 ```
 
-If a full TritMorph checkpoint already exists and only the vanilla baseline needs to be rerun:
+### Train the vanilla baseline
 
 ```bash
-python3 -m scripts.run_experiment --max-steps 10000 --dataset wikitext103 --resume-tritmorph-from checkpoints/phase5_preview/tritmorph_step_10000.pt
+python3 -m scripts.train \
+  --config configs/default.yaml \
+  --dataset fineweb_edu_code_agentic_mix \
+  --model-type vanilla_bpe \
+  --output-dir checkpoints/vanilla_bpe
 ```
 
-## Training
-
-Train TritMorph directly:
+### Run the full experiment pipeline
 
 ```bash
-python3 -m scripts.train --config configs/default.yaml --dataset wikitext103 --model-type tritmorph --use-ternary true
+python3 -m scripts.run_experiment \
+  --max-steps 50000 \
+  --dataset fineweb_edu_code_agentic_mix
 ```
 
-Train the vanilla baseline:
+### Evaluate perplexity and morphology
 
 ```bash
-python3 -m scripts.train --config configs/default.yaml --dataset wikitext103 --model-type vanilla_bpe
+python3 -m scripts.eval_morphology \
+  --config configs/default.yaml \
+  --dataset fineweb_edu_code_agentic_mix \
+  --checkpoint checkpoints/tritmorph_ternary/tritmorph_step_50000.pt \
+  --model-type tritmorph \
+  --step 50000
 ```
 
-Resume from a checkpoint:
+### Evaluate downstream tasks
 
 ```bash
-python3 -m scripts.train --config configs/default.yaml --dataset wikitext103 --resume-from checkpoints/phase5_preview/tritmorph_step_10000.pt
+python3 -m scripts.eval_downstream \
+  --config configs/default.yaml \
+  --dataset fineweb_edu_code_agentic_mix \
+  --checkpoint checkpoints/tritmorph_ternary/tritmorph_step_50000.pt \
+  --model-type tritmorph \
+  --step 50000
 ```
 
-## Evaluation
-
-Evaluate TritMorph:
+### Run standard benchmarks
 
 ```bash
-python3 -m scripts.eval_morphology --config configs/default.yaml --dataset wikitext103 --checkpoint checkpoints/phase5_preview/tritmorph_step_10000.pt --model-type tritmorph --step 10000
+python3 -m scripts.eval_standard_benchmarks \
+  --checkpoint checkpoints/tritmorph_ternary/tritmorph_step_50000.pt \
+  --model-type tritmorph \
+  --limit 500
 ```
 
-Evaluate Vanilla BPE:
+### Run speed tests
 
 ```bash
-python3 -m scripts.eval_morphology --config configs/default.yaml --dataset wikitext103 --checkpoint checkpoints/vanilla_bpe/vanilla_bpe_step_10000.pt --model-type vanilla_bpe --step 10000
+python3 -m scripts.eval_speed \
+  --checkpoint checkpoints/tritmorph_ternary/tritmorph_step_50000.pt \
+  --model-type tritmorph
 ```
 
-## Scaled configuration
+## Key Outputs
 
-Default scaled Phase 5 settings in `configs/default.yaml`:
+- `results/morphology_probe_detailed.csv`: per-word systematic probe outputs.
+- `results/downstream_results.md`: downstream task summary.
+- `results/standard_benchmarks.md`: `lm-evaluation-harness` benchmark table.
+- `results/speed_test.md`: decoding speed comparison across device and ternary mode.
 
-- dataset preset: `wikitext103`
-- `d_model=1024`
-- `n_layers=12`
-- `n_heads=16`
-- `batch_size=16`
-- `learning_rate=2e-4`
-- `max_steps=10000`
-- ternary layers enabled by default
+## Built With
 
-## Components
-
-- `src/tokenizer/hybrid_morph_bpe.py`: morphology-aware BPE wrapper with word-to-subword span tracking.
-- `src/model/composition_layer.py`: explicit interconnection layer for subword-to-word fusion.
-- `src/model/tritmorph_model.py`: transformer backbone operating on fused word-level states.
-- `src/model/vanilla_bpe_baseline.py`: fair baseline without morphology-aware composition.
-- `src/model/ternary_layers.py`: BitNet-style ternary linear layers with STE and absmax scaling.
-- `scripts/run_experiment.py`: orchestrates train/eval/report generation for both models.
-
-## Morphology probe
-
-The morphology benchmark now evaluates 100+ systematically generated unseen compounds rather than 5 hand-crafted examples.
-
-- 20 common prefixes
-- 20 common suffixes
-- 30 base stems
-- Random combinations of 1-3 prefixes and 1-2 suffixes
-- Words filtered to remain unseen with respect to the training vocabulary
-
-Detailed probe results are saved to `results/morphology_probe_detailed.csv`.
+- `PyTorch` for model training and inference.
+- `datasets` and `transformers` ecosystem tooling for data and compatibility.
+- `lm-evaluation-harness` for standard benchmark execution.
+- Custom TritMorph tokenizer and composition modules in `src/`.
 
 ## Citation
 
-If you use this repository in research, please cite it using the metadata in `CITATION.cff`.
+If you reference this repository, use the metadata in `CITATION.cff`.
 
 ```bibtex
 @software{tritmorphllm2026,

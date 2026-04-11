@@ -123,7 +123,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--checkpoint", type=Path, default=None)
     parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--model-type", type=str, default=None, choices=["tritmorph", "vanilla_bpe"])
-    parser.add_argument("--dataset", type=str, default=None, choices=["wikitext103", "tiny_stories"])
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        default=None,
+        choices=["wikitext103", "tiny_stories", "fineweb_edu_code_agentic_mix"],
+    )
     parser.add_argument("--step", type=int, default=500)
     return parser.parse_args()
 

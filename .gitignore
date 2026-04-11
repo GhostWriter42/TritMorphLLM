@@ -1,12 +1,14 @@
-# Python
+# Python caches and bytecode
 __pycache__/
 *.py[cod]
 *.so
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.coverage
+htmlcov/
 
-# Environments
+# Virtual environments
 .venv/
 venv/
 env/
@@ -14,15 +16,19 @@ env/
 # Jupyter
 .ipynb_checkpoints/
 
-# Training artifacts
+# Training artifacts and generated outputs
 checkpoints/
 results/*.log
+results/*.json
 wandb/
+logs/
+*.log
 
-# Local data
+# Local data and downloaded corpora
 data/
+.cache/
 
-# Editors and OS
+# Editors and OS files
 .DS_Store
 .idea/
 .vscode/
